@@ -22,19 +22,29 @@ public class Main {
         // initialize input and output stream.
         BufferedReader inputStreamBufferedReader = null;
         PrintWriter textOutputWriter = null;
+
+        // GET request variables.
         String requestLine = null;
         String pathName = null;
+        String subString = null;
 
         try {
             inputStreamBufferedReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             textOutputWriter = new PrintWriter(clientSocket.getOutputStream(), true);
             requestLine = inputStreamBufferedReader.readLine();
-            // GET /hello HTTP/1.1
             pathName = requestLine.split(" ")[1];
 
             if (pathName.equals("/")) {
-                // clientSocket.getOutputStream().write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
+
                 textOutputWriter.println("HTTP/1.1 200 OK\r\n\r\n");
+
+            } else if (pathName.startsWith("/echo/")) {
+
+                subString = pathName.substring(6);
+                textOutputWriter.println("HTTP/1.1 200 OK\r\n" +
+                        "Content-Type: text/plain\r\n" +
+                        "Content-Length: " + subString.length() + "\r\n\r\n" + subString);
+
             } else {
                 textOutputWriter.println("HTTP/1.1 404 Not Found\r\n\r\n");
             }
