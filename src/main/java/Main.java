@@ -27,6 +27,8 @@ public class Main {
         String requestLine = null;
         String pathName = null;
         String subString = null;
+        String userAgent = null;
+        String headerLine = null;
 
         try {
             inputStreamBufferedReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -34,22 +36,37 @@ public class Main {
             requestLine = inputStreamBufferedReader.readLine();
             pathName = requestLine.split(" ")[1];
 
+            // find the user-agent
+            while ((headerLine = inputStreamBufferedReader.readLine()) != null && !headerLine.isEmpty()) {
+                if (headerLine.startsWith("User-Agent: ")) {
+                    userAgent = headerLine.substring("User-Agent: ".length());
+                }
+            }
+
             if (pathName.equals("/")) {
 
                 textOutputWriter.println("HTTP/1.1 200 OK\r\n\r\n");
 
-            } else if (pathName.startsWith("/echo/")) {
+            } else if (pathName.startsWith("/echo")) {
 
                 subString = pathName.substring(6);
                 textOutputWriter.println("HTTP/1.1 200 OK\r\n" +
                         "Content-Type: text/plain\r\n" +
                         "Content-Length: " + subString.length() + "\r\n\r\n" + subString);
 
+            } else if (pathName.startsWith("/user-agent")) {
+
+                textOutputWriter.println("HTTP/1.1 200 OK\r\n" +
+                        "Content-Type: text/plain\r\n" +
+                        "Content-Length: " + userAgent.length() + "\r\n\r\n" + userAgent);
+
             } else {
                 textOutputWriter.println("HTTP/1.1 404 Not Found\r\n\r\n");
             }
+
             inputStreamBufferedReader.close();
             textOutputWriter.close();
+
         } catch (IOException e) {
             System.out.println("IOException: " + e.getMessage());
         }
