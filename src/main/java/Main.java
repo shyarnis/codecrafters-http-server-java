@@ -5,15 +5,16 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.lang.Thread;
+import java.lang.Runnable;
 
 /**
- * ClientHandler
+ * ClientRunnable
  */
 
-class ClientHandler extends Thread {
+class ClientRunnable implements Runnable {
     private Socket clientSocket;
 
-    public ClientHandler(Socket socket) {
+    public ClientRunnable(Socket socket) {
         this.clientSocket = socket;
     }
 
@@ -87,8 +88,8 @@ public class Main {
                 System.out.println("accepted new connection");
 
                 // Handle each connection in a new thread.
-                ClientHandler clientThread = new ClientHandler(clientSocket);
-                clientThread.start();
+                ClientRunnable clientRun = new ClientRunnable(clientSocket);
+                new Thread(clientRun).start();
             }
         } catch (IOException e) {
             System.out.println("IOException: " + e.getMessage());
