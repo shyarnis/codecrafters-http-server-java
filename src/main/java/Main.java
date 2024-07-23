@@ -4,21 +4,21 @@ import java.io.PrintWriter;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.lang.Thread;
 
-public class Main {
-    public static void main(String[] args) {
-        // initialize server socket and client socket.
-        ServerSocket serverSocket = null;
-        Socket clientSocket = null;
+/**
+ * ClientHandler
+ */
 
-        try {
-            serverSocket = new ServerSocket(4221);
-            clientSocket = serverSocket.accept();
-            System.out.println("accepted new connection");
-        } catch (IOException e) {
-            System.out.println("IOException: " + e.getMessage());
-        }
+class ClientHandler extends Thread {
+    private Socket clientSocket;
 
+    public ClientHandler(Socket socket) {
+        this.clientSocket = socket;
+    }
+
+    // method overridding `run()`
+    public void run() {
         // initialize input and output stream.
         BufferedReader inputStreamBufferedReader = null;
         PrintWriter textOutputWriter = null;
@@ -67,6 +67,29 @@ public class Main {
             inputStreamBufferedReader.close();
             textOutputWriter.close();
 
+        } catch (IOException e) {
+            System.out.println("IOException: " + e.getMessage());
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        // initialize server socket and client socket.
+        ServerSocket serverSocket = null;
+        Socket clientSocket = null;
+
+        try {
+            serverSocket = new ServerSocket(4221);
+
+            while (true) {
+                clientSocket = serverSocket.accept();
+                System.out.println("accepted new connection");
+
+                // Handle each connection in a new thread.
+                ClientHandler clientThread = new ClientHandler(clientSocket);
+                clientThread.start();
+            }
         } catch (IOException e) {
             System.out.println("IOException: " + e.getMessage());
         }
