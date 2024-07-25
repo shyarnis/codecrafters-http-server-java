@@ -6,6 +6,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.lang.Thread;
 import java.lang.Runnable;
+import java.io.File;
+import java.nio.file.Files;
 
 /**
  * ClientRunnable
@@ -13,9 +15,11 @@ import java.lang.Runnable;
 
 class ClientRunnable implements Runnable {
     private Socket clientSocket;
+    private String directory;
 
-    public ClientRunnable(Socket socket) {
+    public ClientRunnable(Socket socket, String directory) {
         this.clientSocket = socket;
+        this.directory = directory;
     }
 
     // method overridding `run()`
@@ -61,6 +65,21 @@ class ClientRunnable implements Runnable {
                         "Content-Type: text/plain\r\n" +
                         "Content-Length: " + userAgent.length() + "\r\n\r\n" + userAgent);
 
+            } else if (pathName.startsWith("/files")) {
+
+                // get fileName /files/{filename}
+                String fileName = pathName.substring(6);
+                File file = new File(directory, fileName);
+
+                if (file.exists()) {
+                    byte[] fileContent = Files.readAllBytes(file.toPath());
+                    textOutputWriter.println("HTTP/1.1 200 OK\r\n" +
+                            "Content-Type: application/octet-stream\r\n" +
+                            "Content-Length: " + fileContent.length + "\r\n\r\n" + new String(fileContent));
+                } else {
+                    textOutputWriter.println("HTTP/1.1 404 Not Found\r\n\r\n");
+                }
+
             } else {
                 textOutputWriter.println("HTTP/1.1 404 Not Found\r\n\r\n");
             }
@@ -80,6 +99,12 @@ public class Main {
         ServerSocket serverSocket = null;
         Socket clientSocket = null;
 
+        // parse command line arguments.
+        String directory = "";
+        if (args.length == 2 && args[0].equals("--directory")) {
+            directory = args[1];
+        }
+
         try {
             serverSocket = new ServerSocket(4221);
 
@@ -88,7 +113,7 @@ public class Main {
                 System.out.println("accepted new connection");
 
                 // Handle each connection in a new thread.
-                ClientRunnable clientRun = new ClientRunnable(clientSocket);
+                ClientRunnable clientRun = new ClientRunnable(clientSocket, directory);
                 new Thread(clientRun).start();
             }
         } catch (IOException e) {
