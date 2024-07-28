@@ -84,7 +84,13 @@ class ClientRunnable implements Runnable {
     }
 
     // handle get request
-    private void handleGetRequest(PrintWriter textOutputWriter, String pathName, String userAgent, String compressionScheme, String directory) {
+    private void handleGetRequest(
+        PrintWriter textOutputWriter, 
+        String pathName, 
+        String userAgent, 
+        String compressionScheme, 
+        String directory
+        ) {
 
         if (pathName.equals("/")) {
 
@@ -151,7 +157,12 @@ class ClientRunnable implements Runnable {
     }
 
     // handle POST Request
-    private void handlePostRequest(PrintWriter textOutputWriter, String pathName, String body, String directory) {
+    private void handlePostRequest(
+        PrintWriter textOutputWriter, 
+        String pathName, 
+        String body, 
+        String directory
+        ) {
         // POST /files/{filename}
         String fileName = pathName.substring(7);
         File file = new File(directory, fileName);
