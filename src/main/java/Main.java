@@ -48,7 +48,9 @@ class ClientRunnable implements Runnable {
                 } else if (headerLine.startsWith("Content-Length: ")) {
                     contentLength = Integer.parseInt(headerLine.substring("Content-Length: ".length()));
                 } else if (headerLine.startsWith("Accept-Encoding: ")) {
-                    compressionScheme = headerLine.substring("Accept-Encoding: ".length());
+                    if (headerLine.contains("gzip")){
+                        compressionScheme = "gzip";
+                    }
                 }
             }
 
