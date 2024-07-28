@@ -32,6 +32,7 @@ class ClientRunnable implements Runnable {
         String headerLine = null;
         String requestMethod = null;
         int contentLength = 0;
+        String compressionScheme = "xyz";
 
         try {
             inputStreamBufferedReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -40,12 +41,14 @@ class ClientRunnable implements Runnable {
             pathName = requestLine.split(" ")[1];
             requestMethod = requestLine.split(" ")[0];
 
-            // find the user-agent abd content-length header
+            // find the user-agent and content-length header
             while ((headerLine = inputStreamBufferedReader.readLine()) != null && !headerLine.isEmpty()) {
                 if (headerLine.startsWith("User-Agent: ")) {
                     userAgent = headerLine.substring("User-Agent: ".length());
                 } else if (headerLine.startsWith("Content-Length: ")) {
                     contentLength = Integer.parseInt(headerLine.substring("Content-Length: ".length()));
+                } else if (headerLine.startsWith("Accept-Encoding: ")) {
+                    compressionScheme = headerLine.substring("Accept-Encoding: ".length());
                 }
             }
 
@@ -61,7 +64,7 @@ class ClientRunnable implements Runnable {
             // handle request method
             switch (requestMethod) {
                 case "GET" ->
-                    handleGetRequest(textOutputWriter, pathName, userAgent, directory);
+                    handleGetRequest(textOutputWriter, pathName, userAgent, compressionScheme, directory);
                 case "POST" -> 
                     handlePostRequest(textOutputWriter, pathName, body, directory);
                 default -> 
@@ -77,7 +80,7 @@ class ClientRunnable implements Runnable {
     }
 
     // handle get request
-    private void handleGetRequest(PrintWriter textOutputWriter, String pathName, String userAgent, String directory) {
+    private void handleGetRequest(PrintWriter textOutputWriter, String pathName, String userAgent, String compressionScheme, String directory) {
 
         if (pathName.equals("/")) {
 
@@ -86,10 +89,20 @@ class ClientRunnable implements Runnable {
         } else if (pathName.startsWith("/echo")) {
             // GET /echo/{substring}
             String subString = pathName.substring(6);
-            textOutputWriter.println("""
+
+            if (compressionScheme.equals("gzip")) {
+                textOutputWriter.println("""
+                                     HTTP/1.1 200 OK\r
+                                     Content-Type: text/plain\r
+                                     Content-Encoding: gzip\r
+                                     Content-Length: """ + subString.length() + "\r\n\r\n" + subString);
+            } else {
+                textOutputWriter.println("""
                                      HTTP/1.1 200 OK\r
                                      Content-Type: text/plain\r
                                      Content-Length: """ + subString.length() + "\r\n\r\n" + subString);
+            }
+            
 
         } else if (pathName.startsWith("/user-agent")) {
 
