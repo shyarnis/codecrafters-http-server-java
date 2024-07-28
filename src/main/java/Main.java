@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -7,6 +8,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.util.zip.GZIPOutputStream;
 
 
 class ClientRunnable implements Runnable {
@@ -91,20 +93,28 @@ class ClientRunnable implements Runnable {
         } else if (pathName.startsWith("/echo")) {
             // GET /echo/{substring}
             String subString = pathName.substring(6);
+                        
+            try {
+                byte[] responseContent = subString.getBytes();
+                
+                if (compressionScheme.equals("gzip")) {
+                    responseContent = compressGzip(responseContent);
+                    textOutputWriter.print("HTTP/1.1 200 OK\r\n");
+                    textOutputWriter.print("Content-Type: text/plain\r\n");
+                    textOutputWriter.print("Content-Encoding: gzip\r\n");
+                    textOutputWriter.print("Content-Length: " + responseContent.length + "\r\n\r\n");
+                } else {
+                    textOutputWriter.print("HTTP/1.1 200 OK\r\n");
+                    textOutputWriter.print("Content-Type: text/plain\r\n");
+                    textOutputWriter.print("Content-Length: " + responseContent.length + "\r\n\r\n");
+                }
 
-            if (compressionScheme.equals("gzip")) {
-                textOutputWriter.println("""
-                                     HTTP/1.1 200 OK\r
-                                     Content-Type: text/plain\r
-                                     Content-Encoding: gzip\r
-                                     Content-Length: """ + subString.length() + "\r\n\r\n" + subString);
-            } else {
-                textOutputWriter.println("""
-                                     HTTP/1.1 200 OK\r
-                                     Content-Type: text/plain\r
-                                     Content-Length: """ + subString.length() + "\r\n\r\n" + subString);
+                textOutputWriter.flush();
+                clientSocket.getOutputStream().write(responseContent);
+                clientSocket.getOutputStream().flush();
+            } catch (IOException e) {
+                textOutputWriter.println("HTTP/1.1 500 Internal Server Error\r\n\r\n");
             }
-            
 
         } else if (pathName.startsWith("/user-agent")) {
 
@@ -160,6 +170,15 @@ class ClientRunnable implements Runnable {
             System.out.println("IOException: " + e.getMessage());
         }
     }
+
+    private byte[] compressGzip(byte[] data) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOutputStream)) {
+            gzipOutputStream.write(data);
+        }
+        return byteArrayOutputStream.toByteArray();
+    }
+
 }
 
 public class Main {
